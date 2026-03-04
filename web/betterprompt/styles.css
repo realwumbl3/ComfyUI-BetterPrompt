@@ -1,0 +1,653 @@
+gradio-app {
+    isolation: isolate;
+}
+
+.BetterPromptContainer {
+    display: grid;
+    position: relative;
+}
+
+body .BetterPromptAssets {
+    --better-prompt-text-size: 14px;
+    font-size: var(--better-prompt-text-size);
+    font-family: "Source Sans Pro", ui-sans-serif, "system-ui", sans-serif;
+    color: white;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+
+    & .Button {
+        font-size: 1.1em;
+        padding: 0 0.4em;
+        background: #4b5563;
+        height: 100%;
+        border-radius: 0.4em;
+        user-select: none;
+        cursor: pointer;
+    }
+
+    & .AutoFitInput {
+        position: relative;
+    }
+
+    & .AutoFitInput input,
+    & .AutoFitInput span {
+        white-space: pre;
+        padding: 0 .2em;
+    }
+
+    & .AutoFitInput input {
+        position: absolute;
+        inset: 0;
+    }
+
+    & .AutoFitInput span {
+        opacity: 0;
+        position: relative;
+    }
+
+    & textarea,
+    & input {
+        font-family: inherit;
+        color: white;
+    }
+}
+
+.BetterPromptAssets * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+}
+
+.BetterPrompt {
+    /* container: editor / size; */
+    font-size: 1em;
+    display: grid;
+    gap: 0.4em;
+    position: relative;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.4em;
+    padding: .5em;
+    resize: vertical;
+    overflow: auto;
+    grid-template-areas: "NodeField"
+        "EditorFooter"
+        "ResolutionPicker";
+    grid-template-rows: 1fr max-content;
+    width: 100%;
+    min-width: min(12em, 100%);
+    min-height: 3.3em;
+    backdrop-filter: blur(.4em);
+
+    & .Header {
+        grid-area: Header;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ffffff3d;
+        padding: .5em;
+
+        & .LeftSide {
+            display: flex;
+            gap: 0.4em;
+        }
+
+        & .RightSide {
+            display: flex;
+            gap: 0.4em;
+
+            & .Button.FitHeight {
+                writing-mode: vertical-rl;
+                height: 1em;
+                font-size: .7em;
+                text-align: center;
+            }
+        }
+    }
+
+    & .BetterPromptHintInfo {
+        & .Hint {
+            display: flex;
+            gap: 5px;
+        }
+
+    }
+
+    & .EditorFooter {
+        grid-area: EditorFooter;
+        display: flex;
+        padding: 0 .5em;
+        gap: 0.4em;
+        justify-content: space-between;
+
+        >.leftSide {
+            display: grid;
+            gap: 0.4em;
+            height: max-content;
+            grid-template-columns: max-content auto;
+            grid-template-rows: 1fr;
+
+            >.Column {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto max-content;
+                display: grid;
+
+                &>.Row.Status {
+                    padding-left: 0.4em;
+
+                    &>.Status {
+                        display: flex;
+                        gap: 0.4em;
+                        align-items: center;
+                    }
+                }
+
+                &>.Row.Manage {
+                    display: flex;
+                    gap: 0.4em;
+                }
+            }
+
+            &>.Button {
+                font-size: 1.1em;
+                padding: 0 0.4em;
+                background: #4b5563;
+                height: 100%;
+                border-radius: 0.4em;
+                user-select: none;
+                cursor: pointer;
+            }
+        }
+
+        >.rightSide {
+            display: flex;
+            gap: 0.4em;
+            align-items: center;
+            justify-content: flex-end;
+            color: #aaa;
+            font-size: 0.85em;
+        }
+
+        & .ClearPrompt {
+            display: grid;
+            grid-auto-flow: column;
+            gap: 0.4em;
+
+            & .Button.Cancel,
+            & .Button.Confirm {
+                display: none;
+            }
+
+            &.active .Button {
+                display: block;
+            }
+        }
+
+        & .Compose {
+            display: block;
+            padding: 0.2em 0.6em;
+            background: #090909a5;
+            outline: 2px solid #3737374d;
+            color: white;
+            border-radius: 0.4em;
+            text-align: center;
+            cursor: pointer;
+            font-size: 1.5em;
+
+            &.Modified {
+                animation: pulsingComposeButton 1s infinite;
+            }
+        }
+    }
+
+    & .ExtraFooter {
+
+        display: flex;
+        padding: 0 .5em;
+        gap: 0.4em;
+        overflow-x: scroll;
+
+        >.Button.Resolution.active {
+            background: orange;
+        }
+
+        >.Separator {
+            border-left: 1px solid #ffffff3d;
+            height: 100%;
+        }
+    }
+
+    /* NODE */
+
+}
+
+@keyframes pulsingComposeButton {
+    0% {
+        background: #090909a5;
+        outline: 2px solid #3737374d;
+    }
+
+    50% {
+        background: #09090959;
+        outline: 2px solid #ffffff4d;
+    }
+
+    100% {
+        background: #090909a5;
+        outline: 2px solid #3737374d;
+    }
+}
+
+.BetterPrompt .NodeField,
+.JsonImportPrompt .NodeField {
+    grid-area: NodeField;
+    border: 1px solid #ffffff3d;
+    padding: 0.4em 0.2em;
+    border-radius: 0.4em;
+    display: grid;
+    grid-template: 1fr/1fr;
+    gap: 0.2em;
+    overflow-y: scroll;
+    position: relative;
+    background: #00000038;
+
+    &.MainNodes {
+        overflow: auto;
+    }
+
+    &>.AddNodes {
+        justify-self: start;
+        align-self: center;
+        position: absolute;
+        display: none;
+        gap: 0.15em;
+        padding: 0.15em;
+        left: 1em;
+
+        >.Button {
+            font-size: 0.75em;
+        }
+    }
+
+    &.Empty>.AddNodes {
+        display: flex;
+    }
+
+    &>.NodeFieldList {
+        padding: 0.8em 0.4em;
+        border-radius: 0.4em;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4em;
+        overflow-y: scroll;
+    }
+}
+
+.BetterPrompt .Node,
+.JsonImportPrompt .Node {
+    border: 1px solid #ffffff40;
+    padding: 0.15em;
+    border-radius: 0.4em;
+    display: flex;
+    gap: 0.3em;
+    height: min-content;
+    position: relative;
+    align-items: center;
+
+    & .Thumb {
+        writing-mode: vertical-rl;
+        width: 0.8em;
+        line-height: .7em;
+    }
+
+    &>.Controls {
+        user-select: none;
+        display: grid;
+        grid-template-columns: auto auto;
+        grid-template-rows: 1fr 1fr;
+        gap: 0.15em;
+        opacity: 0.6;
+        transition: opacity 0.2s;
+        align-items: stretch;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        & .Button {
+            text-align: center;
+            font-size: 0.55em;
+            padding: 0.2em;
+            background: #4b5563;
+            border-radius: 0.2em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.8em;
+            min-height: 1.25em;
+            transition: background 0.1s, transform 0.1s;
+
+            &:hover {
+                background: #6b7280;
+                transform: scale(1.05);
+            }
+
+            &.Mute {
+                flex-direction: column;
+                grid-row: 1 / span 2;
+                height: 100%;
+
+                &>.mutelabel {
+                    display: none;
+                }
+            }
+        }
+
+        & .EyeIcon {
+            width: 1.1em;
+            height: 1.1em;
+        }
+
+    }
+
+    &.Muted {
+        opacity: 0.5;
+
+        &>.Controls .Button.Mute {
+            &>.mutelabel {
+                display: block;
+                font-size: 0.7em;
+                margin-top: 0.1em;
+                color: #fbbf24;
+            }
+        }
+    }
+
+    &>.NodeArea {
+        flex-grow: 1;
+        min-width: 30em;
+
+        &>.BasicText {
+            background: unset;
+            border-radius: 0.4em;
+            min-height: 1em;
+            width: 100%;
+            color: white;
+            padding: 0.4em;
+        }
+
+        &>.Group {
+
+            &>.AddNode {
+                display: flex;
+                gap: 0.15em;
+                padding: 0.15em;
+
+                >.Button {
+                    font-size: 0.65em;
+                }
+            }
+        }
+
+        &>.TagsNodeContainer {
+            display: flex;
+            gap: 5px;
+
+            &>.TagsNode {
+                display: flex;
+                gap: 3px;
+                flex-wrap: wrap;
+
+                &>.Tag {
+                    background: #4b5563;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.15em;
+                    border-radius: 0.4em;
+                    --weight-color: #4b5563;
+
+                    &.LORA {
+                        background: #751d49;
+                    }
+
+                    &>.Weight {
+                        font-size: 0.7em;
+                        font-weight: bolder;
+                        font-family: 'Source Sans Pro';
+                        padding: 0 0.1em;
+                        border-radius: 0.4em;
+                        background: #4b5563;
+                        color: var(--weight-color);
+                        writing-mode: vertical-lr;
+                        transform: rotate(180deg);
+                    }
+
+                    &.Neutral {
+                        &>.Weight {
+                            display: none;
+                        }
+                    }
+
+                    &.Negative {
+                        --weight-color: #fffb00;
+                        border-left: 2px solid var(--weight-color);
+                    }
+
+                    &.Positive {
+                        --weight-color: #00f2ff;
+                        border-left: 2px solid var(--weight-color);
+                    }
+
+                    &>.AutoFitInput input {
+                        background: transparent;
+                        border: none;
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 0.4em;
+                    }
+
+                    &>.AutoFitInput span,
+                    &>.AutoFitInput input {
+                        font-size: 1em;
+                    }
+
+                    &>.Remove {
+                        font-size: 0.9em;
+                        height: max-content;
+                        cursor: pointer;
+                        user-select: none;
+                        color: darkgrey;
+                        padding: 0 0.1em;
+
+                        &:hover {
+                            color: white;
+                        }
+                    }
+
+                }
+
+            }
+        }
+
+        &>.Options {
+            display: flex;
+            gap: 0.4em;
+
+            & label {
+                display: flex;
+                gap: 0.4em;
+                align-items: center;
+            }
+
+            & input[type="radio"] {
+                background-color: #232739;
+                border-radius: 100%;
+            }
+        }
+
+    }
+
+    &.CursorInNestedNodeField>.FloatingButtons {
+        display: none;
+    }
+
+    & .FloatingButtons {
+        position: absolute;
+        top: -1em;
+        left: 2em;
+        font-size: 0.85em;
+        /* Larger font size */
+        opacity: 0;
+        z-index: 10;
+        pointer-events: none;
+        transition: opacity 0.15s ease-in-out;
+
+        &.Bottom {
+            top: unset;
+            bottom: -1em;
+
+            &>div {
+                bottom: 0;
+            }
+        }
+
+        &>div {
+            position: absolute;
+            display: flex;
+            pointer-events: none;
+            /* Invisible container passes through all clicks */
+            align-items: center;
+            gap: 0.3em;
+
+            /* Invisible bridge to carry mouse hover from Thumb to Buttons */
+            &::after {
+                content: "";
+                position: absolute;
+                left: -2em;
+                width: 2em;
+                height: 100%;
+                pointer-events: auto;
+            }
+
+            &>label {
+                display: none;
+                /* Hide 'add' text to reduce clutter */
+            }
+
+            & .Button {
+                pointer-events: auto;
+                /* Only explicitly hoverable buttons catch mouse */
+                background: #374151;
+                padding: 0.25em 0.6em;
+                border-radius: 0.3em;
+                cursor: pointer;
+                transition: background 0.15s, transform 0.1s;
+                font-size: 0.8em;
+                white-space: nowrap;
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+                border: 1px solid #4b5563;
+
+                &:hover {
+                    background: #4b5563;
+                    color: white;
+                    transform: scale(1.05);
+                }
+            }
+        }
+    }
+
+    & .Thumb:hover+.FloatingButtons,
+    & .FloatingButtons:hover {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+}
+
+.BetterPromptTitle {
+    color: white;
+    font-weight: bold;
+    font-size: 1em;
+    transition: font-size 0.2s;
+}
+
+@container editor (max-height: 3em) {
+    .BetterPromptTitle {
+        font-size: .8em;
+    }
+}
+
+.ResolutionPicker {
+    display: flex;
+    padding: 0 .5em;
+    gap: 0.15em 0.4em;
+    overflow-x: scroll;
+    flex-wrap: wrap;
+
+    & .Button {
+        font-size: 1.1em;
+        padding: 0 0.4em;
+        background: #4b5563;
+        height: 100%;
+        border-radius: 0.4em;
+        user-select: none;
+        cursor: pointer;
+    }
+
+    >.Button.Resolution.active {
+        background: orange;
+    }
+
+    >.Separator {
+        border-left: 2px solid #ffffff14;
+        height: auto;
+    }
+
+    >.Newline {
+        flex-basis: 100%;
+        height: 0;
+    }
+}
+
+.JsonImportPrompt {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1f2937;
+    width: clamp(30em, 50vw, 90vw);
+    max-height: calc(100vh - 8em);
+    overflow-y: scroll;
+    border-radius: 0.4em;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    grid-template-columns: 1fr;
+    gap: 0.4em;
+    padding: 0.8em;
+    z-index: 10000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    border: 1px solid #374151;
+
+    &>.Buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.4em;
+    }
+
+    &>.Input {
+        all: unset;
+        color: yellow;
+        font-family: monospace;
+        background: #000000e5;
+        padding: 0.4em;
+        border-radius: 0.4em;
+    }
+}
+
+.highlighted {
+    /* --highlight-color: orange; */
+    box-shadow: 0 0 0 2px var(--highlight-color);
+}

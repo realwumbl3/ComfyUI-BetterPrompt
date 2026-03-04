@@ -1,0 +1,148 @@
+import { app } from "../../../scripts/app.js";
+import zyX, { html, css } from "./betterprompt/zyX-es6.js";
+import Editor, { recognizeData } from "./betterprompt/editor.js";
+import { getFileUrl } from "./betterprompt/main.js";
+
+// Load styles
+css`
+.better-prompt-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.82);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(14px);
+    font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+.better-prompt-modal-content {
+    width: 95vw;
+    height: 90vh;
+    background: #111;
+    border-radius: 12px;
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.better-prompt-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: #441111;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 11000;
+}
+
+.better-prompt-close:hover {
+    background: #aa2222;
+}
+
+/* Override BetterPrompt defaults to fit our modal */
+.BetterPromptContainer {
+    height: 100% !important;
+    width: 100% !important;
+    background: transparent !important;
+}
+
+.BetterPrompt {
+    background: transparent !important;
+    border: none !important;
+    height: 100% !important;
+}
+@import url(${getFileUrl('static/styles.css')});
+`;
+
+app.registerExtension({
+    name: "ComfyUI.BetterPrompt",
+    async beforeRegisterNodeDef(nodeType, nodeData, app) {
+        if (nodeData.name === "BetterPrompt") {
+            const onNodeCreated = nodeType.prototype.onNodeCreated;
+            nodeType.prototype.onNodeCreated = function () {
+                const r = onNodeCreated ? onNodeCreated.apply(this, arguments) : undefined;
+
+                const promptWidget = this.widgets.find(w => w.name === "prompt");
+
+                this.addWidget("button", "Open BetterPrompt Editor", null, () => {
+                    const modal = document.createElement("div");
+                    modal.className = "better-prompt-modal";
+
+                    const content = document.createElement("div");
+                    content.className = "better-prompt-modal-content";
+
+                    const closeBtn = document.createElement("div");
+                    closeBtn.className = "better-prompt-close";
+                    closeBtn.innerText = "CLOSE (ESC)";
+                    closeBtn.onclick = () => modal.remove();
+
+                    modal.appendChild(content);
+                    modal.appendChild(closeBtn);
+                    document.body.appendChild(modal);
+
+                    // Setup fake tab structure that Editor expects
+                    const fakeA1111Tabs = document.createElement("div");
+                    fakeA1111Tabs.id = "tabs";
+                    fakeA1111Tabs.innerHTML = `
+                        <div class="tab-nav"></div>
+                        <div id="tab_txt2img">
+                            <div id="txt2img_prompt_container">
+                                <textarea id="positive"></textarea>
+                                <textarea id="negative"></textarea>
+                            </div>
+                        </div>
+                    `;
+                    content.appendChild(fakeA1111Tabs);
+
+                    const editor = new Editor({}, {
+                        tabNav: fakeA1111Tabs.querySelector(".tab-nav"),
+                        tabs: fakeA1111Tabs
+                    }, "txt2img");
+
+                    // Inject current prompt if it exists
+                    if (promptWidget.value) {
+                        try {
+                            const data = recognizeDataForExtension(promptWidget.value);
+                            if (data) editor.mainNodes.loadJson(data);
+                            else editor.textarea.value = promptWidget.value;
+                        } catch (e) { }
+                    }
+
+                    // Handle escape key
+                    const escHandler = (e) => {
+                        if (e.key === "Escape") {
+                            modal.remove();
+                            document.removeEventListener("keydown", escHandler);
+                        }
+                    };
+                    document.addEventListener("keydown", escHandler);
+
+                    // Hook into the compose button logic
+                    const originalCompose = editor.composePrompt;
+                    editor.composePrompt = async function () {
+                        await originalCompose.apply(this, arguments);
+                        // After composer finishes, update the widget
+                        promptWidget.value = editor.textarea.value;
+                    };
+                });
+
+                return r;
+            };
+        }
+    }
+});
+
+function recognizeDataForExtension(data) {
+    return recognizeData(data);
+}
