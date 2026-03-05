@@ -11,7 +11,32 @@ css`
     font-family: "Source Sans Pro", ui-sans-serif, system-ui, sans-serif;
     background: #111827; 
     color: white;
+    width: 100% !important;
     height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+.BetterPrompt-Internal-Container .BetterPromptContainer {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+.BetterPrompt-Internal-Container .BetterPrompt {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+.BetterPrompt-Internal-Container .MainEditor {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
 }
@@ -34,8 +59,8 @@ css`
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Fix the NodeField so it expands to fill the node */
-.NodeField {
+/* Fix the NodeField so it expands to fill the node (ComfyUI embedded context only) */
+.BetterPrompt-Internal-Container .NodeField {
     flex: 1 1 0% !important;
     height: auto !important;
     min-height: 0 !important;
@@ -44,18 +69,20 @@ css`
     overflow: hidden !important;
 }
 
-.NodeFieldList {
-    flex: 1 !important;
+.BetterPrompt-Internal-Container .NodeFieldList {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     scrollbar-width: thin !important;
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
 }
 
-.NodeFieldList::-webkit-scrollbar {
+.BetterPrompt-Internal-Container .NodeFieldList::-webkit-scrollbar {
     width: 6px !important;
 }
 
-.NodeFieldList::-webkit-scrollbar-thumb {
+.BetterPrompt-Internal-Container .NodeFieldList::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2) !important;
     border-radius: 10px !important;
 }
@@ -78,10 +105,13 @@ css`
 .Node {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
 }
 
 .NodeArea {
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
 }
 
 textarea.BasicText {
@@ -125,7 +155,46 @@ app.registerExtension({
                 editorContainer.style.pointerEvents = "auto";
 
                 // Add the widget that handles the DOM
-                this.addDOMWidget("betterprompt_editor", "HTML", editorContainer);
+                const widget = this.addDOMWidget("betterprompt_editor", "HTML", editorContainer);
+
+                // Override the widget's draw method to resize the internal editor
+                const originalDraw = widget.draw;
+                widget.draw = function(ctx, node, widget_width, y, widget_height) {
+                    // Call original draw method
+                    originalDraw.call(this, ctx, node, widget_width, y, widget_height);
+
+                    // Resize the internal editor container to match the widget dimensions
+                    if (editorContainer && editorContainer.style.display !== "none") {
+                        const scale = ctx.getTransform().a;
+                        const internalWidth = widget_width * scale;
+                        const internalHeight = widget_height * scale;
+
+                        // Update the editor container size
+                        editorContainer.style.width = internalWidth + "px";
+                        editorContainer.style.height = internalHeight + "px";
+
+                        // Force layout recalculation for internal elements
+                        const internalContainer = editorContainer.querySelector('.BetterPrompt-Internal-Container');
+                        if (internalContainer) {
+                            internalContainer.style.width = "100%";
+                            internalContainer.style.height = "100%";
+
+                            // Force the BetterPrompt editor to recalculate its layout
+                            if (editor && editor.mainNodes) {
+                                // Trigger any necessary layout updates in the editor
+                                setTimeout(() => {
+                                    if (editor.mainNodes.main) {
+                                        editor.mainNodes.main.style.height = "100%";
+                                    }
+                                }, 0);
+                            }
+
+                            // Trigger a resize event to let internal components know about the size change
+                            const resizeEvent = new Event('resize', { bubbles: false });
+                            internalContainer.dispatchEvent(resizeEvent);
+                        }
+                    }
+                };
 
                 // Capture wheel events to prevent canvas zooming while scrolling the editor
                 editorContainer.addEventListener("wheel", (e) => {

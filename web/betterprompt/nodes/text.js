@@ -15,7 +15,7 @@ export default class TextNode extends Node {
 
         html`
             <div this="text_header" class="TextHeader" style="display:flex; justify-content:flex-end; padding: 0.15em 0.4em; font-size: 0.85em; color: #aaa; background: rgba(0,0,0,0.1);">
-                <span this="weight_indicator" class="WeightIndicator" zyx-mouseenter="${() => editor.setHint('Alt+Up / Alt+Down to adjust weight')}">Weight: ${this.getJson().weight || 1}</span>
+                <span this="weight_indicator" class="WeightIndicator" zyx-mouseenter="${() => editor.setHint('Alt+Up / Alt+Down to adjust weight, Alt+- to negate weight')}">Weight: ${this.getJson().weight || 1}</span>
             </div>
             <textarea class="BasicText" this="textarea" style="height: ${storedHeight || '3em'}; width: 100%; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; resize: vertical; overflow: auto; min-height: 50px;">${value}</textarea>
         `
@@ -45,23 +45,67 @@ export default class TextNode extends Node {
         });
         this.resizeObserver.observe(this.textarea);
 
+        // Weight adjustment state
+        this.weightAdjustInterval = null;
+        this.adjustingWeight = false;
+
+        const startWeightAdjustment = (direction) => {
+            if (this.adjustingWeight) return;
+            this.adjustingWeight = true;
+
+            const adjustWeight = () => {
+                let current_weight = this.getJson().weight;
+                if (current_weight === undefined) current_weight = 1.0;
+                let new_weight;
+                if (direction === 'up') {
+                    new_weight = Math.min(1.7, Number((current_weight + 0.05).toFixed(2)));
+                } else {
+                    new_weight = Math.max(-1.7, Number((current_weight - 0.05).toFixed(2)));
+                }
+                this.assignJson({ weight: new_weight });
+                this.updateWeightUI();
+            };
+
+            // Initial adjustment
+            adjustWeight();
+
+            // Start continuous adjustment
+            this.weightAdjustInterval = setInterval(adjustWeight, 100); // Adjust every 100ms
+        };
+
+        const stopWeightAdjustment = () => {
+            if (this.weightAdjustInterval) {
+                clearInterval(this.weightAdjustInterval);
+                this.weightAdjustInterval = null;
+            }
+            this.adjustingWeight = false;
+        };
+
         this.textarea.addEventListener("keydown", (e) => {
-            if (e.altKey && e.key === "ArrowUp") {
+            if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+                startWeightAdjustment(e.key === "ArrowUp" ? 'up' : 'down');
+                e.preventDefault();
+            }
+            if (e.altKey && e.key === "-") {
+                // Negate the current weight (multiply by -1)
                 let current_weight = this.getJson().weight;
                 if (current_weight === undefined) current_weight = 1.0;
-                let new_weight = Math.min(1.7, Number((current_weight + 0.05).toFixed(2)));
+                let new_weight = Number((current_weight * -1).toFixed(2));
                 this.assignJson({ weight: new_weight });
                 this.updateWeightUI();
                 e.preventDefault();
             }
-            if (e.altKey && e.key === "ArrowDown") {
-                let current_weight = this.getJson().weight;
-                if (current_weight === undefined) current_weight = 1.0;
-                let new_weight = Math.max(-1.7, Number((current_weight - 0.05).toFixed(2)));
-                this.assignJson({ weight: new_weight });
-                this.updateWeightUI();
-                e.preventDefault();
+        });
+
+        this.textarea.addEventListener("keyup", (e) => {
+            if ((e.key === "ArrowUp" || e.key === "ArrowDown") || !e.altKey) {
+                stopWeightAdjustment();
             }
+        });
+
+        // Also listen for when Alt is released
+        this.textarea.addEventListener("blur", () => {
+            stopWeightAdjustment();
         });
 
         this.main.style.marginBottom = "10px";

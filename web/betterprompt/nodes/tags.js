@@ -79,9 +79,50 @@ class Tag {
             </div>
         `.bind(this);
 
+        // Weight adjustment state
+        this.weightAdjustInterval = null;
+        this.adjustingWeight = false;
+
+        const startWeightAdjustment = (direction) => {
+            if (this.adjustingWeight) return;
+            this.adjustingWeight = true;
+
+            const adjustWeight = () => {
+                if (direction === 'up') {
+                    this.weight = Math.min(1.7, Number((this.weight + 0.05).toFixed(2)));
+                } else {
+                    this.weight = Math.max(-1.7, Number((this.weight - 0.05).toFixed(2)));
+                }
+                this.updateTag();
+            };
+
+            // Initial adjustment
+            adjustWeight();
+
+            // Start continuous adjustment
+            this.weightAdjustInterval = setInterval(adjustWeight, 100); // Adjust every 100ms
+        };
+
+        const stopWeightAdjustment = () => {
+            if (this.weightAdjustInterval) {
+                clearInterval(this.weightAdjustInterval);
+                this.weightAdjustInterval = null;
+            }
+            this.adjustingWeight = false;
+        };
+
         this.input.addEventListener("input", () => this.updateTag());
 
         this.input.addEventListener("keydown", (e) => {
+            if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+                startWeightAdjustment(e.key === "ArrowUp" ? 'up' : 'down');
+                e.preventDefault();
+            }
+            if (e.altKey && e.key === "-") {
+                this.weight = Number((this.weight * -1).toFixed(2));
+                this.updateTag();
+                e.preventDefault();
+            }
             if (!(e.key === "ArrowLeft" || e.key === "ArrowRight")) return;
             const initSel = this.input.selectionStart();
             this.input.addEventListener(
@@ -105,16 +146,14 @@ class Tag {
             if (e.key === "Backspace" && this.input.value() === "") {
                 if (this.tagNode.tags.length > 1) this.removeTag();
             }
-            if (e.altKey && e.key === "ArrowUp") {
-                this.weight = Math.min(1.7, Number((this.weight + 0.05).toFixed(2)));
-                this.updateTag();
-                e.preventDefault();
+            if ((e.key === "ArrowUp" || e.key === "ArrowDown") || !e.altKey) {
+                stopWeightAdjustment();
             }
-            if (e.altKey && e.key === "ArrowDown") {
-                this.weight = Math.max(-1.7, Number((this.weight - 0.05).toFixed(2)));
-                this.updateTag();
-                e.preventDefault();
-            }
+        });
+
+        // Also listen for when Alt is released or input loses focus
+        this.input.addEventListener("blur", () => {
+            stopWeightAdjustment();
         });
 
         this.input.set(this.value);

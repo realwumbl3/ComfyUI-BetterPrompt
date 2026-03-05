@@ -115,6 +115,15 @@ body .BetterPromptAssets {
 
     }
 
+    & .MainEditor {
+        grid-area: NodeField;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
     & .EditorFooter {
         grid-area: EditorFooter;
         display: flex;
@@ -240,9 +249,7 @@ body .BetterPromptAssets {
     }
 }
 
-.BetterPrompt .NodeField,
-.JsonImportPrompt .NodeField {
-    grid-area: NodeField;
+.BetterPrompt .NodeField {
     border: 1px solid #ffffff3d;
     padding: 0.4em 0.2em;
     border-radius: 0.4em;
@@ -252,10 +259,61 @@ body .BetterPromptAssets {
     overflow-y: scroll;
     position: relative;
     background: #00000038;
+    flex: 1;
+    min-height: 0;
 
     &.MainNodes {
         overflow: auto;
     }
+
+    &>.AddNodes {
+        justify-self: start;
+        align-self: center;
+        position: absolute;
+        display: none;
+        gap: 0.15em;
+        padding: 0.15em;
+        left: 1em;
+
+        >.Button {
+            font-size: 0.75em;
+        }
+    }
+
+    &.Empty>.AddNodes {
+        display: flex;
+    }
+
+    &>.NodeFieldList {
+        padding: 0.8em 0.4em;
+        border-radius: 0.4em;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4em;
+        overflow-y: scroll;
+    }
+}
+
+.JsonImportPrompt .Preview {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.JsonImportPrompt .NodeField {
+    border: 1px solid #ffffff3d;
+    padding: 0.4em 0.2em;
+    border-radius: 0.4em;
+    display: grid;
+    grid-template: 1fr/1fr;
+    gap: 0.2em;
+    overflow-y: scroll;
+    position: relative;
+    background: #00000038;
+    flex: 1;
+    min-height: 0;
 
     &>.AddNodes {
         justify-self: start;
