@@ -1,5 +1,6 @@
 import zyX, { html, css } from "../zyX-es6.js";
 import Node from "../node.js";
+import { getWeightTierClass } from "../util.js";
 
 export default class TextNode extends Node {
     constructor(editor, nodefield, initialJson) {
@@ -14,7 +15,7 @@ export default class TextNode extends Node {
         const storedHeight = this.getJson().height;
 
         html`
-            <div this="text_header" class="TextHeader" style="display:flex; justify-content:flex-end; padding: 0.15em 0.4em; font-size: 0.85em; color: #aaa; background: rgba(0,0,0,0.1);">
+            <div this="text_header" class="TextHeader" style="display:flex; justify-content:flex-end; padding: 0.15em 0.4em; font-size: 0.85em; background: rgba(0,0,0,0.1);">
                 <span this="weight_indicator" class="WeightIndicator" zyx-mouseenter="${() => editor.setHint('Alt[Up] / Alt[Down] to adjust weight, Alt[-] to negate weight')}">Weight: ${this.getJson().weight || 1}</span>
             </div>
             <textarea class="BasicText" this="textarea" style="height: ${storedHeight || '3em'}; width: 100%; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; resize: vertical; overflow: auto; min-height: 50px;">${value}</textarea>
@@ -125,6 +126,8 @@ export default class TextNode extends Node {
         this.main.classList.toggle("Neutral", w === 1);
         this.main.classList.toggle("Positive", w > 1);
         this.main.classList.toggle("Negative", w < 1);
+        this.main.classList.remove("WeightRed", "WeightOrange", "WeightYellow", "WeightWhite", "WeightGreen", "WeightBlue", "WeightPurple", "WeightPink");
+        this.main.classList.add(getWeightTierClass(w));
         this.callModified();
     }
 

@@ -540,7 +540,7 @@ body .BetterPromptAssets {
                     &>.Weight {
                         font-size: 0.7em;
                         font-weight: bolder;
-                        font-family: 'Source Sans Pro';
+                        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', ui-monospace, monospace;
                         padding: 0 0.1em;
                         border-radius: 0.4em;
                         background: #4b5563;
@@ -555,15 +555,14 @@ body .BetterPromptAssets {
                         }
                     }
 
-                    &.Negative {
-                        --weight-color: #fffb00;
-                        border-left: 2px solid var(--weight-color);
-                    }
-
-                    &.Positive {
-                        --weight-color: #00f2ff;
-                        border-left: 2px solid var(--weight-color);
-                    }
+                    &.WeightRed { --weight-color: #ef4444; border-left: 2px solid #ef4444; }
+                    &.WeightOrange { --weight-color: #f97316; border-left: 2px solid #f97316; }
+                    &.WeightYellow { --weight-color: #eab308; border-left: 2px solid #eab308; }
+                    &.WeightWhite { --weight-color: #ffffff; border-left: 2px solid #6b7280; }
+                    &.WeightGreen { --weight-color: #22c55e; border-left: 2px solid #22c55e; }
+                    &.WeightBlue { --weight-color: #3b82f6; border-left: 2px solid #3b82f6; }
+                    &.WeightPurple { --weight-color: #a855f7; border-left: 2px solid #a855f7; }
+                    &.WeightPink { --weight-color: #ec4899; border-left: 2px solid #ec4899; }
 
                     &>.AutoFitInput input {
                         background: transparent;
@@ -596,6 +595,12 @@ body .BetterPromptAssets {
             }
         }
 
+        &>.TextHeader .WeightIndicator {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', ui-monospace, monospace;
+            font-weight: 600;
+            color: #9ca3af;
+        }
+
         &>.Options {
             display: flex;
             gap: 0.4em;
@@ -613,6 +618,15 @@ body .BetterPromptAssets {
         }
 
     }
+
+    &.WeightRed .TextHeader .WeightIndicator { color: #ef4444; }
+    &.WeightOrange .TextHeader .WeightIndicator { color: #f97316; }
+    &.WeightYellow .TextHeader .WeightIndicator { color: #eab308; }
+    &.WeightWhite .TextHeader .WeightIndicator { color: #ffffff; }
+    &.WeightGreen .TextHeader .WeightIndicator { color: #22c55e; }
+    &.WeightBlue .TextHeader .WeightIndicator { color: #3b82f6; }
+    &.WeightPurple .TextHeader .WeightIndicator { color: #a855f7; }
+    &.WeightPink .TextHeader .WeightIndicator { color: #ec4899; }
 
     &.CursorInNestedNodeField>.FloatingButtons {
         display: none;

@@ -1,3 +1,15 @@
+export function getWeightTierClass(w) {
+    const n = Number(w);
+    if (n < -1) return "WeightRed";
+    if (n < 0) return "WeightOrange";
+    if (n < 1) return "WeightYellow";
+    if (n === 1) return "WeightWhite";
+    if (n <= 1.15) return "WeightGreen";
+    if (n <= 1.25) return "WeightBlue";
+    if (n <= 1.35) return "WeightPurple";
+    return "WeightPink";
+}
+
 export function shiftArrayElement(array, element, offset) {
     const index = array.indexOf(element);
     const newIndex = Math.max(0, Math.min(array.length - 1, index + offset));

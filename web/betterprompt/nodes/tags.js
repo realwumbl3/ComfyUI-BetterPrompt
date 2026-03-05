@@ -1,6 +1,7 @@
 import zyX, { html, LiveList, sleep } from "../zyX-es6.js";
 import Node from "../node.js";
 import AutoFitInput from "../autofitInput.js";
+import { getWeightTierClass } from "../util.js";
 
 export default class TagsNode extends Node {
     constructor(editor, nodefield, initialJson) {
@@ -224,6 +225,8 @@ class Tag {
         this.main.classList.toggle("Neutral", this.weight === 1);
         this.main.classList.toggle("Positive", this.weight > 1);
         this.main.classList.toggle("Negative", this.weight < 1);
+        this.main.classList.remove("WeightRed", "WeightOrange", "WeightYellow", "WeightWhite", "WeightGreen", "WeightBlue", "WeightPurple", "WeightPink");
+        this.main.classList.add(getWeightTierClass(this.weight));
     }
 
     async onConnected() {
