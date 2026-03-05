@@ -51,7 +51,21 @@ export default class TagsNode extends Node {
 
     toPrompt() {
         if (this.isMuted()) return false;
-        return this.tags.map((tag) => tag.toPrompt()).join(", ") + ", ";
+        return this.toPromptPair().positive;
+    }
+
+    toPromptPair() {
+        if (this.isMuted()) return { positive: "", negative: "" };
+        const posParts = [];
+        const negParts = [];
+        for (const tag of this.tags) {
+            const { positive, negative } = tag.toPromptPair();
+            if (positive && positive.trim()) posParts.push(positive);
+            if (negative && negative.trim()) negParts.push(negative);
+        }
+        const pos = posParts.length ? posParts.join(", ") + ", " : "";
+        const neg = negParts.length ? negParts.join(", ") + ", " : "";
+        return { positive: pos, negative: neg };
     }
 
     getJson() {
@@ -176,6 +190,20 @@ class Tag {
         const underscored = value.replace(/ /g, "_");
         if (this.weight !== 1) return `(${underscored}:${this.weight})`;
         return underscored;
+    }
+
+    toPromptPair() {
+        const value = (this.value || "").trim();
+        if (!value) return { positive: "", negative: "" };
+        if (value.startsWith("<") && value.endsWith(">")) {
+            return this.weight >= 1 ? { positive: value, negative: "" } : { positive: "", negative: value };
+        }
+        const underscored = value.replace(/ /g, "_");
+        if (this.weight >= 1) {
+            const pos = this.weight !== 1 ? `(${underscored}:${this.weight})` : underscored;
+            return { positive: pos, negative: "" };
+        }
+        return { positive: "", negative: underscored };
     }
 
     focus() {

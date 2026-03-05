@@ -9,7 +9,7 @@ css`@import url("/extensions/ComfyUI-BetterPrompt/betterprompt/styles.css");`;
 css`
 .BetterPrompt-Internal-Container {
     font-family: "Source Sans Pro", ui-sans-serif, system-ui, sans-serif;
-    background: #111827; 
+    background: transparent;
     color: white;
     width: 100% !important;
     height: 100% !important;
@@ -214,9 +214,10 @@ app.registerExtension({
                 // Capture output from editor
                 const originalUpdateInput = editor.composePrompt;
                 editor.composePrompt = async function () {
-                    const prompt = this.mainNodes.composePrompt();
-                    internalOutputs.positive = prompt;
-                    // Note: negative logic would go here if BetterPrompt added specific negative field-type
+                    const pair = this.mainNodes.composePromptPair?.() ?? { positive: this.mainNodes.composePrompt(), negative: "" };
+                    internalOutputs.positive = pair.positive;
+                    internalOutputs.negative = pair.negative;
+                    if (this.nodeValuePreview?.expanded) this.nodeValuePreview.refresh();
                     syncToComfy();
                 }.bind(editor);
 

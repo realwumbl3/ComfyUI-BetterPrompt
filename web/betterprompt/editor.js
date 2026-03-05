@@ -50,11 +50,13 @@ export default class Editor {
 
         this.clearPromptButton = new ClearPromptButton(this);
         this.betterPromptHint = new BetterPromptHintInfo(this);
+        this.nodeValuePreview = new NodeValuePreview(this);
         this.setHint = this.betterPromptHint.setHint.bind(this.betterPromptHint);
 
         html`
             <div class="BetterPromptContainer BetterPromptAssets">
                 <div this="main" class="BetterPrompt">
+                    ${this.nodeValuePreview}
                     <div
                         this="main_editor"
                         class="MainEditor"
@@ -215,6 +217,54 @@ function highlightNode(node, color) {
     });
 }
 
+class NodeValuePreview {
+    constructor(editor) {
+        this.editor = editor;
+        this.expanded = false;
+        const opts = editor.options?.getPreviewValues || {};
+        const getPair = () => editor.mainNodes.composePromptPair?.() ?? { positive: editor.mainNodes.composePrompt(), negative: "" };
+        this.getPositive = opts.positive ?? (() => getPair().positive);
+        this.getNegative = opts.negative ?? (() => getPair().negative);
+        html`
+            <div this="main" class="NodeValuePreview">
+                <div
+                    this="toggle"
+                    class="NodeValuePreviewToggle Button"
+                    zyx-click="${this.toggle.bind(this)}"
+                    zyx-mouseenter="${(_) => editor.setHint("Toggle node value preview", { ml: this.toggle })}"
+                >
+                    <span this="label">toggle vis</span>
+                </div>
+                <div this="panel" class="NodeValuePreviewPanel" style="display: none;">
+                    <div this="positiveBox" class="NodeValuePreviewBox NodeValuePreviewPositive">
+                        <div class="NodeValuePreviewLabel">Positive</div>
+                        <pre this="positiveText" class="NodeValuePreviewText"></pre>
+                    </div>
+                    <div this="negativeBox" class="NodeValuePreviewBox NodeValuePreviewNegative">
+                        <div class="NodeValuePreviewLabel">Negative</div>
+                        <pre this="negativeText" class="NodeValuePreviewText"></pre>
+                    </div>
+                </div>
+            </div>
+        `.bind(this);
+    }
+
+    toggle() {
+        this.expanded = !this.expanded;
+        this.panel.style.display = this.expanded ? "flex" : "none";
+        this.toggle.classList.toggle("active", this.expanded);
+        if (this.expanded) this.refresh();
+    }
+
+    refresh() {
+        if (!this.expanded) return;
+        const pos = typeof this.getPositive === "function" ? this.getPositive() : this.getPositive ?? "";
+        const neg = typeof this.getNegative === "function" ? this.getNegative() : this.getNegative ?? "";
+        this.positiveText.textContent = pos || "(empty)";
+        this.negativeText.textContent = neg || "(empty)";
+    }
+}
+
 class EditorButton {
     constructor(editor, { text, tooltip, click } = {}) {
         this.editor = editor;
@@ -267,7 +317,7 @@ class BetterPromptHintInfo {
         this.editor = editor;
         html`
             <div this="main" class="BetterPromptHintInfo">
-                <div this="hint" class="Hint"><span>|</span><span this="tooltip"></span></div>
+                <div this="hint" class="Hint"><span></span><span this="tooltip"></span></div>
                 <div this="info" class="Info"></div>
             </div>
         `.bind(this);

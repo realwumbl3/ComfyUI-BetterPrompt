@@ -72,14 +72,79 @@ body .BetterPromptAssets {
     padding: .5em;
     resize: vertical;
     overflow: auto;
-    grid-template-areas: "NodeField"
+    grid-template-areas: "Preview"
+        "NodeField"
         "EditorFooter"
         "ResolutionPicker";
-    grid-template-rows: 1fr max-content;
+    grid-template-rows: max-content 1fr max-content max-content;
     width: 100%;
     min-width: min(12em, 100%);
     min-height: 3.3em;
     backdrop-filter: blur(.4em);
+
+    & .NodeValuePreview {
+        grid-area: Preview;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.3em;
+        margin-bottom: 0.2em;
+        background: transparent;
+    }
+
+    & .NodeValuePreviewToggle {
+        background: transparent !important;
+        font-size: 0.3em;
+        padding: 0.25em 0.5em;
+        border-radius: 0.4em;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    & .NodeValuePreviewToggle:hover,
+    & .NodeValuePreviewToggle.active {
+        background: #4b5563 !important;
+    }
+
+    & .NodeValuePreviewPanel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4em;
+    }
+
+    & .NodeValuePreviewBox {
+        border-radius: 0.4em;
+        padding: 0.5em 0.6em;
+        overflow: hidden;
+    }
+
+    & .NodeValuePreviewPositive {
+        background: #0d2818;
+        border: 1px solid #14532d;
+        color: #dcfce7;
+    }
+
+    & .NodeValuePreviewNegative {
+        background: #28181a;
+        border: 1px solid #450a0f;
+        color: #fecdd3;
+    }
+
+    & .NodeValuePreviewLabel {
+        font-size: 0.8em;
+        font-weight: 600;
+        opacity: 0.9;
+        margin-bottom: 0.25em;
+    }
+
+    & .NodeValuePreviewText {
+        font-family: inherit;
+        font-size: 0.9em;
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        line-height: 1.35;
+    }
 
     & .Header {
         grid-area: Header;
@@ -130,6 +195,7 @@ body .BetterPromptAssets {
         padding: 0 .5em;
         gap: 0.4em;
         justify-content: space-between;
+        align-items: end;
 
         >.leftSide {
             display: grid;

@@ -109,12 +109,25 @@ export default class NodeField {
     }
 
     composePrompt() {
-        let prompt = this.nodes
-            .map((node) => node.toPrompt())
-            .filter(Boolean)
-            .join(" ");
+        const pair = this.composePromptPair();
+        let prompt = pair.positive;
         // remove repeating commas (, , , ) -> (,)
         prompt = prompt.replace(/,(\s*,)+/g, ",");
         return prompt;
+    }
+
+    composePromptPair() {
+        let positive = "";
+        let negative = "";
+        for (const node of this.nodes) {
+            const pair = node.toPromptPair
+                ? node.toPromptPair()
+                : { positive: node.toPrompt?.() || "", negative: "" };
+            if (pair.positive) positive += (positive ? " " : "") + pair.positive;
+            if (pair.negative) negative += (negative ? " " : "") + pair.negative;
+        }
+        positive = positive.replace(/,(\s*,)+/g, ",");
+        negative = negative.replace(/,(\s*,)+/g, ",");
+        return { positive, negative };
     }
 }

@@ -15,7 +15,7 @@ export default class TextNode extends Node {
 
         html`
             <div this="text_header" class="TextHeader" style="display:flex; justify-content:flex-end; padding: 0.15em 0.4em; font-size: 0.85em; color: #aaa; background: rgba(0,0,0,0.1);">
-                <span this="weight_indicator" class="WeightIndicator" zyx-mouseenter="${() => editor.setHint('Alt+Up / Alt+Down to adjust weight, Alt+- to negate weight')}">Weight: ${this.getJson().weight || 1}</span>
+                <span this="weight_indicator" class="WeightIndicator" zyx-mouseenter="${() => editor.setHint('Alt[Up] / Alt[Down] to adjust weight, Alt[-] to negate weight')}">Weight: ${this.getJson().weight || 1}</span>
             </div>
             <textarea class="BasicText" this="textarea" style="height: ${storedHeight || '3em'}; width: 100%; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; resize: vertical; overflow: auto; min-height: 50px;">${value}</textarea>
         `
@@ -137,7 +137,15 @@ export default class TextNode extends Node {
 
     toPrompt() {
         if (this.isMuted()) return false;
-        const value = this.getJson().value;
-        return value.replace(/\\n/g, " ").replace(/,+/g, ",").replace(/  +/g, " ");
+        return this.toPromptPair().positive;
+    }
+
+    toPromptPair() {
+        if (this.isMuted()) return { positive: "", negative: "" };
+        const value = this.getJson().value.replace(/\\n/g, " ").replace(/,+/g, ",").replace(/  +/g, " ");
+        const weight = this.getJson().weight;
+        const w = weight === undefined ? 1 : Number(weight);
+        if (w < 1) return { positive: "", negative: value };
+        return { positive: value, negative: "" };
     }
 }
