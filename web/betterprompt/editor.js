@@ -51,10 +51,12 @@ export default class Editor {
         this.clearPromptButton = new ClearPromptButton(this);
         this.betterPromptHint = new BetterPromptHintInfo(this);
         this.nodeValuePreview = new NodeValuePreview(this);
+        this.tokenCounter = new TokenCounter(this);
         this.setHint = this.betterPromptHint.setHint.bind(this.betterPromptHint);
 
         html`
             <div class="BetterPromptContainer BetterPromptAssets">
+                ${this.betterPromptHint}
                 <div this="main" class="BetterPrompt">
                     ${this.nodeValuePreview}
                     <div
@@ -80,7 +82,7 @@ export default class Editor {
                             </div>
                         </div>
                         <div class="rightSide">
-                            ${this.betterPromptHint}
+                            ${this.tokenCounter}
                         </div>
                     </div>
                 </div>
@@ -188,7 +190,12 @@ export default class Editor {
     }
 
     async composePrompt() {
-        const prompt = this.mainNodes.composePrompt();
+        const pair = this.mainNodes.composePromptPair?.() ?? { positive: this.mainNodes.composePrompt(), negative: "" };
+        const prompt = pair.positive;
+
+        if (this.tokenCounter) {
+            this.tokenCounter.updateCount(pair.positive, pair.negative);
+        }
 
         if (this.textarea) {
             await updateInput(this.textarea, prompt);
@@ -329,6 +336,89 @@ class BetterPromptHintInfo {
             this.tooltip.innerText = "";
         });
         ml && ml.addEventListener("mouseleave", () => zyX(this.tooltip).instant("tooltip"), { once: true });
+    }
+}
+
+class TokenCounter {
+    constructor(editor) {
+        this.editor = editor;
+        this.maxTokens = 512;
+        this.tokenset = "t5";
+        this.enabled = true;
+        this.lastPositive = "";
+        this.lastNegative = "";
+
+        html`
+            <div this="main" class="TokenCounter">
+                <select this="modelSelect" class="TokenCounterSelect Button" zyx-change="${this.onModelChange.bind(this)}">
+                    <option value="512" data-tokenset="t5">Wan 2.2 (512)</option>
+                    <option value="256" data-tokenset="clip">Flux/SD3 (256)</option>
+                    <option value="77" data-tokenset="clip">SDXL (77)</option>
+                    <option value="75" data-tokenset="clip">SD 1.5 (75)</option>
+                    <option value="-1">Disabled</option>
+                </select>
+                <div this="textDisplay" class="TokenCounterText">
+                    0 / 512 (0%)
+                </div>
+            </div>
+        `.bind(this);
+    }
+
+    onModelChange(e) {
+        const val = parseInt(this.modelSelect.value);
+        if (val === -1) {
+            this.enabled = false;
+            this.textDisplay.style.display = "none";
+        } else {
+            this.enabled = true;
+            this.maxTokens = val;
+            this.tokenset = this.modelSelect.selectedOptions[0]?.dataset.tokenset || "clip";
+            this.textDisplay.style.display = "block";
+        }
+        this.updateCount(this.lastPositive, this.lastNegative);
+    }
+
+    updateCount(positive = "", negative = "", manualCounts = null) {
+        this.lastPositive = positive || "";
+        this.lastNegative = negative || "";
+        if (!this.enabled) return;
+
+        const est = (text) => (text.match(/[\w]+|[^\s\w]/g) || []).length;
+        let posCount = manualCounts?.positive ?? est(this.lastPositive);
+        let negCount = manualCounts?.negative ?? est(this.lastNegative);
+
+        const posPercent = Math.round((posCount / this.maxTokens) * 100);
+        const negPercent = Math.round((negCount / this.maxTokens) * 100);
+        const maxPercent = Math.max(posPercent, negPercent);
+
+        let text;
+        if (!this.lastNegative.trim()) {
+            text = `${posCount} / ${this.maxTokens} (${posPercent}%)`;
+            if (this.tokenset === "clip" && this.maxTokens <= 77) {
+                const chunks = Math.ceil(posCount / this.maxTokens);
+                text += chunks > 1 ? ` [${chunks} chunks]` : (posCount > 0 ? " [1 chunk]" : "");
+            }
+        } else {
+            const fmt = (c, pct) => {
+                let s = `${c}/${this.maxTokens}`;
+                if (this.tokenset === "clip" && this.maxTokens <= 77 && c > 0) {
+                    const ch = Math.ceil(c / this.maxTokens);
+                    s += ch > 1 ? ` [${ch}]` : " [1]";
+                }
+                return s;
+            };
+            text = `pos ${fmt(posCount, posPercent)} · neg ${fmt(negCount, negPercent)}`;
+        }
+
+        this.textDisplay.textContent = text;
+
+        if (maxPercent > 100) {
+            this.textDisplay.style.color = "#ef4444"; // red
+        } else if (maxPercent > 80) {
+            this.textDisplay.style.color = "#f97316"; // orange
+        } else {
+            this.textDisplay.style.color = "#aaa"; // default
+        }
     }
 }
 

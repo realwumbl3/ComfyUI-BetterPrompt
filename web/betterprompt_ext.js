@@ -30,13 +30,14 @@ css`
 .BetterPrompt-Internal-Container .BetterPrompt {
     flex: 1 1 0 !important;
     min-height: 0 !important;
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }
 
 .BetterPrompt-Internal-Container .MainEditor {
-    flex: 1 1 0 !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
+    flex: 1 1 auto !important;
+    min-height: min-content !important;
+    overflow: visible !important;
     display: flex !important;
     flex-direction: column !important;
 }
@@ -61,21 +62,18 @@ css`
 
 /* Fix the NodeField so it expands to fill the node (ComfyUI embedded context only) */
 .BetterPrompt-Internal-Container .NodeField {
-    flex: 1 1 0% !important;
+    flex: 1 1 auto !important;
     height: auto !important;
-    min-height: 0 !important;
+    min-height: min-content !important;
     display: flex !important;
     flex-direction: column !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 
 .BetterPrompt-Internal-Container .NodeFieldList {
-    flex: 1 1 0 !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    scrollbar-width: thin !important;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
+    flex: 1 1 auto !important;
+    min-height: min-content !important;
+    overflow: visible !important;
 }
 
 .BetterPrompt-Internal-Container .NodeFieldList::-webkit-scrollbar {
@@ -159,7 +157,7 @@ app.registerExtension({
 
                 // Override the widget's draw method to resize the internal editor
                 const originalDraw = widget.draw;
-                widget.draw = function(ctx, node, widget_width, y, widget_height) {
+                widget.draw = function (ctx, node, widget_width, y, widget_height) {
                     // Call original draw method
                     originalDraw.call(this, ctx, node, widget_width, y, widget_height);
 
@@ -215,8 +213,39 @@ app.registerExtension({
                 const originalUpdateInput = editor.composePrompt;
                 editor.composePrompt = async function () {
                     const pair = this.mainNodes.composePromptPair?.() ?? { positive: this.mainNodes.composePrompt(), negative: "" };
-                    internalOutputs.positive = pair.positive;
+                    const positive = pair.positive;
+                    internalOutputs.positive = positive;
                     internalOutputs.negative = pair.negative;
+
+                    if (this.tokenCounter) {
+                        const negative = pair.negative || "";
+                        // Show a quick local estimate first so the UI isn't stuck at 0%
+                        this.tokenCounter.updateCount(positive, negative);
+
+                        // Use SwarmUI backend to get accurate token count if available
+                        const genReq = window.genericRequest || window.parent?.genericRequest;
+                        if (genReq) {
+                            const baseParams = { skipPromptSyntax: true };
+                            if (this.tokenCounter.tokenset) {
+                                baseParams.tokenset = this.tokenCounter.tokenset;
+                            }
+                            const fetchCount = (text) => new Promise((resolve) => {
+                                if (!text.trim()) return resolve(0);
+                                genReq('TokenizeInDetail', { ...baseParams, text }, data => {
+                                    resolve(data?.tokens ? data.tokens.length : null);
+                                });
+                            });
+                            Promise.all([fetchCount(positive), fetchCount(negative)]).then(([posCount, negCount]) => {
+                                const counts = {};
+                                if (posCount !== null) counts.positive = posCount;
+                                if (negCount !== null) counts.negative = negCount;
+                                this.tokenCounter.updateCount(positive, negative, Object.keys(counts).length ? counts : null);
+                            }).catch(() => {
+                                this.tokenCounter.updateCount(positive, negative);
+                            });
+                        }
+                    }
+
                     if (this.nodeValuePreview?.expanded) this.nodeValuePreview.refresh();
                     syncToComfy();
                 }.bind(editor);
